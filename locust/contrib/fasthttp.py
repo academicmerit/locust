@@ -179,7 +179,9 @@ class FastHttpSession(object):
         
         if catch_response:
             response.locust_request_meta = request_meta
-            return ResponseContextManager(response)
+            context = ResponseContextManager(response)
+            context._cached_content = response.content
+            return context
         else:
             try:
                 response.raise_for_status()
