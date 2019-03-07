@@ -6,7 +6,7 @@ import six
 import socket
 from base64 import b64encode
 from six.moves.urllib.parse import urlparse, urlunparse
-from ssl import create_default_context, SSLError
+from gevent.ssl import create_default_context, SSLError
 from timeit import default_timer
 
 if six.PY2:
