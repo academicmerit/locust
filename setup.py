@@ -47,7 +47,7 @@ setup(
         "msgpack-python>=0.4.2", 
         "six>=1.10.0", 
         "pyzmq>=16.0.2", 
-        "geventhttpclient-wheels",
+        "geventhttpclient @ https://github.com/gwik/geventhttpclient/tarball/91f9db6102cd3b97c1839b07f41bc1b2b718fac2",
     ],
     test_suite="locust.test",
     tests_require=['mock'],
