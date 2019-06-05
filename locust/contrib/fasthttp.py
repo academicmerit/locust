@@ -92,7 +92,6 @@ class FastHttpSession(object):
                 max_retries=1,
                 cookiejar=self.cookiejar,
                 ssl_context_factory=create_default_context,
-                ssl_options={"server_hostname": parsed_url.hostname},
             )
         if parsed_url.username and parsed_url.password:
             netloc = parsed_url.hostname
