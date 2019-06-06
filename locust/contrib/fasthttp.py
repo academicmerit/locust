@@ -66,6 +66,12 @@ class FastHttpLocust(Locust):
     Instance of HttpSession that is created upon instantiation of Locust. 
     The client support cookies, and therefore keeps the session between HTTP requests.
     """
+
+    multi_hosts = False
+    """
+    Specifies if multi hosts are going to be attacked which determines
+    whether server_hostname on ssl_options should be set
+    """
     
     def __init__(self):
         super(FastHttpLocust, self).__init__()
@@ -74,26 +80,20 @@ class FastHttpLocust(Locust):
         if not re.match(r"^https?://[^/]+$", self.host, re.I):
             raise LocustError("Invalid host (`%s`). The specified host string must be a base URL without a trailing slash. E.g. http://example.org" % self.host)
         
-        self.client = FastHttpSession(base_url=self.host)
+        self.client = FastHttpSession(base_url=self.host, multi_hosts=self.multi_hosts)
 
 
 class FastHttpSession(object):
     auth_header = None
     
-    def __init__(self, base_url):
+    def __init__(self, base_url, multi_hosts=False):
         self.base_url = base_url
+        self.multi_hosts = multi_hosts
         self.cookiejar = CookieJar()
-        self.client = LocustUserAgent(max_retries=1, cookiejar=self.cookiejar)
+        self.client = self.create_client()
         
         # Check for basic authentication
         parsed_url = urlparse(self.base_url)
-        if parsed_url.scheme == "https" and parsed_url.hostname:
-            self.client = LocustUserAgent(
-                max_retries=1,
-                cookiejar=self.cookiejar,
-                ssl_context_factory=create_default_context,
-                ssl_options={"server_hostname": parsed_url.hostname},
-            )
         if parsed_url.username and parsed_url.password:
             netloc = parsed_url.hostname
             if parsed_url.port:
@@ -104,6 +104,22 @@ class FastHttpSession(object):
             # store authentication header (we construct this by using _basic_auth_str() function from requests.auth)
             self.auth_header = _construct_basic_auth_str(parsed_url.username, parsed_url.password)
     
+    def create_client(self):
+        parsed_url = urlparse(self.base_url)
+        agent_kwargs = {
+            "max_retries": 1,
+            "cookiejar": self.cookiejar
+        }
+
+        if parsed_url.scheme == "https" and parsed_url.hostname:
+            agent_kwargs["ssl_context_factory"] = create_default_context
+
+            if not self.multi_hosts:
+                agent_kwargs["ssl_options"] = {"server_hostname": parsed_url.hostname}
+        
+        client = LocustUserAgent(**agent_kwargs)
+        return client
+
     def _build_url(self, path):
         """ prepend url with hostname unless it's already an absolute URL """
         if absolute_http_url_regexp.match(path):
